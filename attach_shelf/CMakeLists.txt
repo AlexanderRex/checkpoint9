@@ -10,12 +10,15 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 # Declare a C++ executable
 add_executable(pre_approach_node src/pre_approach.cpp)
 
 # Specify libraries to link a library or executable target against
-ament_target_dependencies(pre_approach_node rclcpp sensor_msgs geometry_msgs)
+ament_target_dependencies(pre_approach_node rclcpp sensor_msgs geometry_msgs nav_msgs tf2 tf2_ros)
 
 # Install the executable
 install(TARGETS
