@@ -6,10 +6,8 @@
 class PreApproachNode : public rclcpp::Node {
 public:
   PreApproachNode() : Node("pre_approach"), obstacle(0.0), degrees(0.0) {
-    this->declare_parameter("obstacle",
-                            0.0); // Устанавливаем значение по умолчанию
-    this->declare_parameter("degrees",
-                            0.0); // Устанавливаем значение по умолчанию
+    this->declare_parameter("obstacle", 0.0);
+    this->declare_parameter("degrees", 0.0);
 
     getting_params();
 
@@ -23,6 +21,8 @@ public:
   }
 
 private:
+  bool obstacle_detected = false;
+
   void getting_params() {
     obstacle =
         this->get_parameter("obstacle").get_parameter_value().get<float>();
@@ -32,36 +32,55 @@ private:
   }
 
   void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
+
     float distance_to_obstacle = msg->ranges[msg->ranges.size() / 2];
-    RCLCPP_INFO(this->get_logger(), "Distance to obstacle: %f",
-                distance_to_obstacle);
 
     if (distance_to_obstacle < obstacle) {
-      RCLCPP_WARN(this->get_logger(), "Obstacle detected! Stopping robot.");
+      RCLCPP_WARN(this->get_logger(),
+                  "Obstacle detected! Stopping and rotating robot.");
       stop_robot();
-    } else {
+      rotate_robot();
+      obstacle_detected = true; // Установка флага
+    } else if (!obstacle_detected) {
       move_forward();
     }
   }
 
+  void odom_сallback(const nav_msgs::Odometry::ConstPtr &msg) {
+    double s = msg->pose.pose.orientation.w;
+    double x = msg->pose.pose.orientation.x;
+    double y = msg->pose.pose.orientation.y;
+    double z = msg->pose.pose.orientation.z;
+
+    // Calculate yaw angle from the quaternion
+    current_yaw = atan2(2.0 * (y * x + s * z), s * s + x * x - y * y - z * z);
+  }
+
   void move_forward() {
     geometry_msgs::msg::Twist msg;
-    msg.linear.x = 0.25; // Задаем скорость движения вперед
+    msg.linear.x = 0.25;
     publisher_->publish(msg);
     RCLCPP_INFO(this->get_logger(), "Moving forward");
   }
 
   void stop_robot() {
     geometry_msgs::msg::Twist msg;
-    msg.linear.x = 0.0; // Останавливаем робота
+    msg.linear.x = 0.0;
     publisher_->publish(msg);
     RCLCPP_INFO(this->get_logger(), "Stopping robot");
   }
 
+  void rotate_robot() {
+    geometry_msgs::msg::Twist msg;
+    msg.angular.z = 0.5;
+    publisher_->publish(msg);
+    RCLCPP_INFO(this->get_logger(), "Rotating robot");
+  }
+
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscriber_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
-  float obstacle; // Дистанция до препятствия
-  float degrees; // Градусы для поворота (не используется в текущей логике)
+  float obstacle;
+  float degrees;
 };
 
 int main(int argc, char *argv[]) {
