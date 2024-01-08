@@ -1,14 +1,19 @@
+#include "attach_shelf/srv/go_to_loading.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "rclcpp/executors/multi_threaded_executor.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include <cmath>
 
 class PreApproachNode : public rclcpp::Node {
 public:
-  PreApproachNode() : Node("pre_approach"), obstacle(0.0), degrees(0) {
+  PreApproachNode()
+      : Node("pre_approach"), obstacle(0.0), degrees(0),
+        final_approach_(false) {
     this->declare_parameter("obstacle", 0.0);
     this->declare_parameter("degrees", 0);
+    this->declare_parameter("final_approach", false);
 
     getting_params();
 
@@ -24,6 +29,9 @@ public:
 
     publisher_ =
         this->create_publisher<geometry_msgs::msg::Twist>("/robot/cmd_vel", 10);
+
+    service_client_ =
+        this->create_client<attach_shelf::srv::GoToLoading>("/approach_shelf");
   }
 
 private:
@@ -32,8 +40,29 @@ private:
         this->get_parameter("obstacle").get_parameter_value().get<float>();
     degrees = this->get_parameter("degrees").get_parameter_value().get<int>();
     target_yaw = degrees * M_PI / 180.0;
+    final_approach_ =
+        this->get_parameter("final_approach").get_parameter_value().get<bool>();
     RCLCPP_INFO(this->get_logger(), "Obstacle threshold set to: %f", obstacle);
     RCLCPP_INFO(this->get_logger(), "Rotation degrees set to: %d", degrees);
+  }
+
+  void call_approach_shelf_service() {
+    auto request = std::make_shared<attach_shelf::srv::GoToLoading::Request>();
+    request->attach_to_shelf = final_approach_;
+
+    auto result_future = service_client_->async_send_request(
+        request,
+        [this](rclcpp::Client<attach_shelf::srv::GoToLoading>::SharedFuture
+                   future) {
+          auto response = future.get();
+          if (response->complete) {
+            RCLCPP_INFO(this->get_logger(),
+                        "Approach shelf service call successful");
+          } else {
+            RCLCPP_ERROR(this->get_logger(),
+                         "Approach shelf service call failed");
+          }
+        });
   }
 
   void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
@@ -58,6 +87,8 @@ private:
 
     if (obstacle_detected && !is_rotated) {
       rotate_robot();
+    } else if (is_rotated) {
+      call_approach_shelf_service();
     }
   }
 
@@ -103,6 +134,8 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_subscriber_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscriber_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
+  rclcpp::Client<attach_shelf::srv::GoToLoading>::SharedPtr service_client_;
+
   float obstacle;
   int degrees;
   float yaw_tolerance = 0.1f;
@@ -112,6 +145,7 @@ private:
   double current_yaw = 0.0f;
   double kp = 0.5f;
   double target_yaw = 0.0f;
+  bool final_approach_;
 };
 
 int main(int argc, char *argv[]) {

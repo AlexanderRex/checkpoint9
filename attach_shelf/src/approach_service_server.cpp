@@ -18,7 +18,7 @@ public:
   ShelfLegDetectionService() : Node("shelf_leg_detection_service") {
 
     service_ = this->create_service<attach_shelf::srv::GoToLoading>(
-        "/detect_shelf_legs",
+        "/approach_shelf",
         std::bind(&ShelfLegDetectionService::handle_service_request, this,
                   std::placeholders::_1, std::placeholders::_2));
 

@@ -22,13 +22,19 @@ def generate_launch_description():
         ),
         Node(
             package='attach_shelf',
-            executable='pre_approach_node',
-            name='pre_approach_node',
+            executable='pre_approach_node_v2',
+            name='pre_approach_node_v2',
             output='screen',
             parameters=[
                 {'obstacle': LaunchConfiguration('obstacle')},
                 {'degrees': LaunchConfiguration('degrees')},
                 {'final_approach': LaunchConfiguration('final_approach')}
             ]
+        ),
+        Node(
+            package='attach_shelf',
+            executable='approach_service_server',
+            name='approach_service_server',
+            output='screen'
         )
     ])
