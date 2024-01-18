@@ -60,7 +60,6 @@ void PreApproach::move_forward() {
   geometry_msgs::msg::Twist msg;
   msg.linear.x = 0.5;
   publisher_->publish(msg);
-  RCLCPP_INFO(this->get_logger(), "Moving forward");
 }
 
 void PreApproach::rotate_robot() {
@@ -73,26 +72,17 @@ void PreApproach::rotate_robot() {
     yaw_error += 2 * M_PI;
   }
 
-  RCLCPP_INFO(this->get_logger(),
-              "current_yaw: %f, target_yaw: %f, yaw_error: %f", current_yaw,
-              target_yaw, yaw_error);
-
   if (abs(yaw_error) < yaw_tolerance) {
     is_rotated = true;
     angular_speed = 0.0;
-    RCLCPP_INFO(this->get_logger(),
-                "Yaw error within tolerance, setting is_rotated to true");
   } else {
     angular_speed = kp * yaw_error;
-    RCLCPP_INFO(this->get_logger(), "Yaw error outside tolerance, rotating");
   }
 
   geometry_msgs::msg::Twist msg;
   msg.linear.x = 0.0;
   msg.angular.z = angular_speed;
   publisher_->publish(msg);
-
-  RCLCPP_INFO(this->get_logger(), "Rotating robot");
 }
 
 } // namespace my_components

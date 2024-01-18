@@ -25,7 +25,7 @@ private:
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscriber_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
 
-  float obstacle = 0.3f;
+  float obstacle = 0.45f;
   int degrees = -90;
   float yaw_tolerance = 0.1f;
   float angular_speed = 0.0f;
