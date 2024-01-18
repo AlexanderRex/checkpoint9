@@ -6,6 +6,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include "std_msgs/msg/empty.hpp"
+#include "std_msgs/msg/string.hpp"
 #include <geometry_msgs/msg/twist.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -42,7 +43,7 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_publisher_;
 
   bool legs_detected_ = false;
-  double min_stop_distance_ = 0.3f;
+  double min_stop_distance_ = 0.225f;
   const double max_linear_velocity_ = 0.25;
   const double max_angular_velocity_ = 1.0;
   bool should_move_ = false;

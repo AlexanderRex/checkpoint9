@@ -80,6 +80,7 @@ void AttachServer::calculate_and_publish_velocity() {
       publish_velocity(0.0, 0.0);
       movement_stopped_ = true;
       std_msgs::msg::String msg;
+      msg.data = "";
       elevator_up_publisher_->publish(msg);
     }
     return;
